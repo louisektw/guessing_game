@@ -17,7 +17,7 @@ const GamePage = () => {
         const activeGameId = Cookies.get('activeGame');
         if (activeGameId) {
             setGameId(activeGameId);
-            getGame(token, gameId, setRandomNumber);
+            getGame(token, activeGameId, setRandomNumber);
         }
     }, [gameId, token]);
 
