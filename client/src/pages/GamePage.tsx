@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Button, Typography } from '@mui/material';
+import { Alert, Button, Typography } from '@mui/material';
 import Cookies from 'js-cookie';
 import { startNewGame, makeGuess, getGame } from '../utils/gameUtils';
 import { UserAuth } from '../contexts/UserContext';
@@ -11,6 +11,7 @@ const GamePage = () => {
     const [result, setResult] = useState<string | null>(null);
     const [randomNumber, setRandomNumber] = useState<number | null>(null);
     const [gameId, setGameId] = useState<string | null>(null);
+    const [validationError, setValidationError] = useState<string | null>(null);
     const { token } = UserAuth();
 
     useEffect(() => {
@@ -47,8 +48,11 @@ const GamePage = () => {
 
     return (
         <GameBox paperSx={paperSx}>
-            <Typography variant="h4" sx={{ marginBottom: '1rem' }}>
+            <Typography variant="h4" >
                 Guess the number
+            </Typography>
+            <Typography variant="body1" sx={{ color: 'rgba(0,0,0, 0.5)', marginBottom: '1rem' }}>
+                Make a guess between 0 and 10 000
             </Typography>
             {result && (
                 <Typography variant="body2" sx={{ marginBottom: '1rem' }}>
@@ -61,6 +65,7 @@ const GamePage = () => {
                     setNumberInput={setNumberInput}
                     handleGuess={handleGuess}
                     handleClear={handleClear}
+                    setValidationError={setValidationError}
                 />
             )}
             {!randomNumber && (
@@ -68,6 +73,7 @@ const GamePage = () => {
                     Start a new game
                 </Button>
             )}
+            {validationError && (<Alert severity="error" sx={{marginTop: 2}}>{validationError}</Alert>)}
         </GameBox>
     );
 };

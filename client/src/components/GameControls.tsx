@@ -6,15 +6,36 @@ interface IGameControls {
     setNumberInput: (value: React.SetStateAction<string>) => void;
     handleGuess: () => Promise<void>;
     handleClear: () => void;
+    setValidationError: React.Dispatch<React.SetStateAction<string | null>>;
 }
 
-const GameControls: FC<IGameControls> = ({ numberInput, setNumberInput, handleGuess, handleClear }) => {
+const GameControls: FC<IGameControls> = ({ numberInput, setNumberInput, handleGuess, handleClear, setValidationError }) => {
+
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const input = e.target.value;
+        let error = '';
+
+        if (!/^[0-9]*$/.test(input)) { 
+            error = "Only integers are allowed.";
+        } else if (Number(input) > 10000) {
+            error = "The number is too big."
+        }
+        if (error){
+            setValidationError(error)
+        }
+        else{
+            // Input is valid, update the state
+            setNumberInput(input);
+            setValidationError(null)
+        }
+    };
+
     return (
         <>
             <TextField
                 fullWidth
                 value={numberInput}
-                onChange={(e) => setNumberInput(e.target.value)}
+                onChange={handleInputChange}
                 sx={{ backgroundColor: alpha('#fff', 0.5) }}
             />
             <Box sx={{ width: '100%', marginTop: 3 }}>
