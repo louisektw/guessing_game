@@ -53,17 +53,15 @@ export async function makeGuess(
             setResult('Congratulations! You guessed the correct number.');
             setRandomNumber(null); //Set random number to null to ask for a new game
 
-            await axios.post(
-                `${apiUrl}/delete-game`,
+            await axios.delete(
+                `${apiUrl}/delete-game?gameId=${gameId}`,
                 {
-                    gameId: gameId,
-                },
-                {
-                    headers: {
-                        Authorization: `Bearer ${accessToken}`,
-                    },
+                  headers: {
+                    Authorization: `Bearer ${accessToken}`,
+                  },
                 }
-            );
+              );
+              
             Cookies.remove('activeGame');
         } else if (response.data.guessIsSmaller) {
             setResult('Try again. Your guess is smaller than the secret number.');
