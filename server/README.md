@@ -35,15 +35,11 @@ DB_DATABASE=your_database_name
 - `random_number` (Integer): The randomly generated number for the game.
 - `finished` (Bit/Boolean): Indicates whether the game is finished (0 for not finished, 1 for finished).
 
-#### Example SQL Script for Creating the `games` Table:
+### Prisma
+Prisma is an ORM (Object-Relational Mapping) tool that simplifies database operations and interactions in Node.js applications. In this project, Prisma is used to manage the database and interact with the Microsoft SQL Server. It provides a type-safe way to query the database and perform CRUD (Create, Read, Update, Delete) operations without writing raw SQL queries.
 
-```sql
-CREATE TABLE games (
-  game_id UNIQUEIDENTIFIER PRIMARY KEY,
-  random_number INT,
-  finished BIT
-);
-```
+The Prisma configuration is defined in the [schema.prisma](./prisma/schema.prisma) file. This configuration specifies the data model and database connection details.
+
 
 ## Configuration
 ### Firebase SDK
@@ -65,11 +61,15 @@ Below are the dependencies used in this project:
 
 ```json
 {
-  "dotenv": "^16.3.1",
-  "express": "^4.18.2",
-  "firebase-admin": "^11.10.1",
-  "mssql": "^9.1.3",
-  "nodemon": "^3.0.1",
-  "uuid": "^9.0.0"
+  "@prisma/client": "^5.2.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "express-validator": "^7.0.1",
+    "firebase-admin": "^11.10.1",
+    "mssql": "^9.1.3",
+    "nodemon": "^3.0.1",
+    "prisma": "^5.2.0",
+    "uuid": "^9.0.0"
 }
 ```
