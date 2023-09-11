@@ -1,9 +1,14 @@
 import express from 'express';
-import sql from 'mssql';
+import { validationResult, check } from 'express-validator';
 import { v4 as uuidv4 } from 'uuid';
-import configDB from '../config/database-config.js';
 import admin from 'firebase-admin';
-  
+import dotenv from 'dotenv';
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
+
+dotenv.config();
+
 const serviceAccountKey = JSON.parse(process.env.SERVICE_ACCOUNT_KEY);
 
 const router = express.Router();
@@ -44,36 +49,46 @@ const generateRandomNumber = () => {
 };
 
 router.post('/start-game', async (req, res) => {
-    const gameId = uuidv4();
     const randomNumber = generateRandomNumber();
-    const query = `
-          INSERT INTO games (game_id, random_number, finished)
-          VALUES ('${gameId}', ${randomNumber}, 0);
-          `;
+
     try {
-        const pool = await sql.connect(configDB);
-        await pool.request().query(query);
-        res.send({ gameId, randomNumber });
+        const game = await prisma.games.create({
+            data: {
+                game_id: uuidv4(),
+                random_number: randomNumber,
+                finished: false,
+            },
+        });
+        res.send({ gameId: game.game_id, randomNumber: game.random_number });
     } catch (error) {
         console.error('Error:', error);
         res.status(500).send('Internal Server Error');
     }
 });
 
-router.post('/make-guess', async (req, res) => {
+// The 'gameId' parameter must be a valid UUID.
+// The 'guess' parameter must be a valid integer between 0 and 10000.
+const validateGuess = [check('gameId').isUUID(), check('guess').isFloat({ min: 0, max: 10000 })];
+
+// Adding validation as a middleware
+router.post('/make-guess', validateGuess, async (req, res) => {
+    // Collect the validation errors
+    const errors = validationResult(req);
+
+    //Check if there are validation errors
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+    }
     const gameId = req.body.gameId;
     const guess = req.body.guess;
 
-    const query = `
-  SELECT random_number, finished 
-  FROM games 
-  WHERE game_id = @gameId
-  `;
     try {
-        const pool = await sql.connect(configDB);
-        const result = await pool.request().input('gameId', sql.UniqueIdentifier, gameId).query(query);
-
-        const { random_number, finished } = result.recordset[0];
+        const game = await prisma.games.findUnique({
+            where: {
+                game_id: gameId,
+            },
+        });
+        const { random_number, finished } = game;
 
         if (finished) {
             res.send({ gameOver: true, message: 'The game is already over.' });
@@ -93,43 +108,47 @@ router.post('/make-guess', async (req, res) => {
     }
 });
 
-router.get('/get-game', async (req, res) => {
-    const gameId = req.query.gameId;
+const validateGameId = [check('gameId').isUUID()];
+router.get('/get-game', validateGameId, async (req, res) => {
+    const { gameId } = req.query;
 
     if (!gameId) {
         return res.status(400).json({ error: 'Missing gameId' });
     }
 
-    const query = `
-      SELECT random_number, finished
-      FROM games
-      WHERE game_id = @gameId;
-  `;
     try {
-        const pool = await sql.connect(configDB);
-        const result = await pool.request().input('gameId', sql.UniqueIdentifier, gameId).query(query);
+        const game = await prisma.games.findUnique({
+            where: {
+                game_id: gameId,
+            },
+            select: {
+                random_number: true,
+                finished: true,
+            },
+        });
 
-        if (result.recordset.length === 0) {
+        if (!game) {
             return res.status(404).json({ error: 'Game not found' });
         }
-
-        const { random_number, finished } = result.recordset[0];
-        res.json({ gameId, randomNumber: random_number, finished });
+        res.json({
+            gameId: gameId,
+            randomNumber: game.random_number,
+            finished: game.finished,
+        });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'An error occurred while fetching the game' });
     }
 });
 
-router.post('/delete-game', async (req, res) => {
-    const gameId = req.body.gameId;
-    const query = `
-      DELETE FROM games 
-      WHERE game_id = @gameId
-  `;
+router.delete('/delete-game', validateGameId, async (req, res) => {
+    const { gameId } = req.query;
     try {
-        const pool = await sql.connect(configDB);
-        await pool.request().input('gameId', sql.UniqueIdentifier, gameId).query(query);
+        await prisma.games.delete({
+            where: {
+                game_id: gameId,
+            },
+        });
         res.send({ message: 'Game deleted successfully' });
     } catch (error) {
         console.error(error);

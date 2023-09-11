@@ -1,0 +1,14 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlserver"
+  url      = env("DATABASE_URL")
+}
+
+model games {
+  game_id       String  @id @unique
+  random_number Int
+  finished      Boolean
+}
